@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PAAM</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f0f0f0; }
+        .container { background: white; padding: 20px; border-radius: 10px; text-align: center; }
+        button { font-size: 18px; padding: 15px 25px; border-radius: 8px; border: none; background-color: #007bff; color: white; cursor: pointer; }
+        p { white-space: pre-wrap; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app-container">
+        <!-- Сюда будет грузиться контент -->
+    </div>
+
+    <script>
+        window.Telegram.WebApp.ready();
+        
+        // --- ВСТАВЬТЕ СЮДА ВАШ URL ИЗ N8N ---
+        const N8N_WEBHOOK_URL = 'https://primary-production-7ec55.up.railway.app/webhook-test/e93f8f64-1041-403c-821b-98e0d2627c51'; 
+        
+        const container = document.getElementById('app-container');
+
+        async function sendStartRequest() {
+            try {
+                container.innerHTML = '<p>Загрузка...</p>';
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get_start_info',
+                        data: {
+                            user_id: window.Telegram.WebApp.initDataUnsafe.user?.id
+                        }
+                    })
+                });
+                const responseData = await response.json();
+                handleResponse(responseData);
+            } catch (error) {
+                container.innerHTML = '<p>Ошибка! Проверьте URL в коде и активность workflow в n8n.</p>';
+            }
+        }
+
+        function handleResponse(response) {
+            if (response.type === 'show_text') {
+                container.innerHTML = `
+                    <h1>${response.title}</h1>
+                    <p>${response.content}</p>
+                    <br>
+                    <button onclick="showMainMenu()">Назад</button>
+                `;
+            }
+        }
+
+        function showMainMenu() {
+            container.innerHTML = `
+                <h1>Добро пожаловать!</h1>
+                <p>Нажмите 'Старт', чтобы узнать больше.</p>
+                <br>
+                <button onclick="sendStartRequest()">Старт</button>
+            `;
+        }
+
+        showMainMenu();
+    </script>
+</body>
+</html>
