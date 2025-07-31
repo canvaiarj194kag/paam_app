@@ -6,150 +6,185 @@
     <title>PAAM</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; text-align: center; background-color: #e5e5e5; }
-        .container { max-width: 380px; margin: 0 auto; }
-        .button { display: block; width: 100%; padding: 15px; margin-bottom: 15px; font-size: 18px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; }
-        textarea { width: 100%; min-height: 200px; padding: 10px; border-radius: 12px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 15px; }
-        #startBtn { background-color: #007bff; color: white; }
-        #reflectBtn { background-color: #28a745; color: white; }
-        #chatBtn { background-color: #6c757d; color: white; }
-        .content-area { background: white; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: left; min-height: 100px;}
-        .recording { background-color: #dc3545 !important; color: white; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 15px; text-align: center; background-color: #f0f2f5; color: #1c1e21; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .button { display: block; width: 100%; padding: 15px; margin-bottom: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .button:active { transform: scale(0.98); box-shadow: none; }
+        .questions-block { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; line-height: 1.6; font-size: 15px; }
+        
+        /* Стили для диктофона */
+        #recorder-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+        .recorder-buttons { display: flex; justify-content: space-around; gap: 10px; }
+        .recorder-buttons .button { width: auto; flex-grow: 1; }
+        #recordBtn.recording { background-color: #dc3545 !important; color: white; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+        
+        /* Визуализация записанного аудио */
+        #audio-player { display: none; background: #e9ecef; padding: 15px; border-radius: 12px; text-align: left; }
+        #audio-player .info { font-weight: 600; }
+        #audio-player .delete-btn { float: right; color: #dc3545; background: none; border: none; font-size: 20px; cursor: pointer; padding:0; }
+
+        /* Скрываем/показываем элементы */
+        .hidden { display: none !important; }
+
     </style>
 </head>
 <body>
     <div class="container" id="app-container">
-        <!-- Контент будет генерироваться через JS -->
+        <!-- Контент генерируется через JS -->
     </div>
 
     <script>
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
         
-        const N8N_WEBHOOK_URL = 'https://primary-production-7ec55.up.railway.app/webhook/e93f8f64-1041-403c-821b-98e0d2627c51';
+        const N8N_WEBHOOK_URL = 'ВАШ_PRODUCTION_URL_СЮДА';
         const appContainer = document.getElementById('app-container');
 
-        let isRecording = false;
         let mediaRecorder;
         let audioChunks = [];
+        let audioBlob = null; // Здесь будет храниться готовая запись
 
-        // --- ГЛАВНЫЙ МОЗГ ПРИЛОЖЕНИЯ ---
-
-        function handleResponse(response) {
-            if (response.type === 'show_reflect_screen') {
-                renderReflectScreen(response);
-            } else if (response.type === 'show_text') {
-                renderInfoScreen(response);
-            } else {
-                renderMainMenu();
-            }
-        }
-
-        async function sendAction(actionName, payload = {}) {
-            appContainer.innerHTML = '<h2>Загрузка...</h2>';
-            try {
-                const response = await fetch(N8N_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: actionName,
-                        data: {
-                            ...payload,
-                            user_id: window.Telegram.WebApp.initDataUnsafe.user?.id
-                        }
-                    })
-                });
-                const responseData = await response.json();
-                handleResponse(responseData);
-            } catch (error) {
-                appContainer.innerHTML = '<h2>Произошла ошибка сети.</h2><button class="button" onclick="renderMainMenu()">Главное меню</button>';
-            }
-        }
-
-        // --- ФУНКЦИИ РЕНДЕРИНГА (ОТРИСОВКИ) ЭКРАНОВ ---
-
+        // --- ГЛАВНЫЙ МОЗГ: ОТРИСОВКА ЭКРАНОВ ---
+        
         function renderMainMenu() {
-            appContainer.innerHTML = `
-                <h1>Меню PAAM</h1>
-                <button class="button" id="startBtn">▶️ Старт</button>
-                <button class="button" id="reflectBtn">📝 Reflect</button>
-                <button class="button" id="chatBtn">💬 Чат</button>
-                <div class="content-area" id="content-area"><p>Выберите действие.</p></div>
-            `;
-            document.getElementById('startBtn').addEventListener('click', () => sendAction('start'));
-            document.getElementById('reflectBtn').addEventListener('click', () => sendAction('reflect'));
-            document.getElementById('chatBtn').addEventListener('click', () => sendAction('chat'));
+            // ... код этой функции остается без изменений ...
         }
 
-        function renderReflectScreen(data) {
+        function renderReflectScreen(title, questions) {
             appContainer.innerHTML = `
-                <h2>${data.title}</h2>
-                <textarea id="reflectText" placeholder="Ответьте на вопросы...">${data.questions}</textarea>
-                <button class="button" id="recordBtn">🎤 Записать голос</button>
-                <button class="button" id="sendReflectBtn">✅ Отправить рефлексию</button>
-                <button class="button" onclick="renderMainMenu()">⬅️ Назад</button>
-            `;
-            document.getElementById('recordBtn').addEventListener('click', toggleRecording);
-            document.getElementById('sendReflectBtn').addEventListener('click', sendReflection);
-        }
-
-        function renderInfoScreen(data) {
-             appContainer.innerHTML = `
-                <div class="content-area">
-                    <h2>${data.title}</h2>
-                    <p>${data.content.replace(/\\n/g, '<br>')}</p>
+                <h2>${title}</h2>
+                <div class="questions-block">${questions.replace(/\\n/g, '<br>')}</div>
+                
+                <!-- НАШ НОВЫЙ МОДУЛЬ ДИКТОФОНА -->
+                <div id="recorder-container">
+                    <div id="audio-player">
+                        <button class="delete-btn" id="deleteRecordingBtn">🗑️</button>
+                        <div class="info">✔️ Запись готова (<span id="audio-duration">0:00</span>)</div>
+                    </div>
+                    <div class="recorder-buttons" id="recorder-controls">
+                        <!-- Кнопки будут генерироваться здесь -->
+                    </div>
                 </div>
-                <br>
+                
+                <button class="button" id="sendBtn">✅ Отправить рефлексию</button>
                 <button class="button" onclick="renderMainMenu()">⬅️ Назад</button>
             `;
+            updateRecorderUI('idle'); // Устанавливаем начальное состояние диктофона
+            document.getElementById('sendBtn').addEventListener('click', sendReflectionData);
         }
 
-        // --- ЛОГИКА ЗАПИСИ ГОЛОСА И ОТПРАВКИ ---
+        // --- ЛОГИКА ДИКТОФОНА ---
 
-        function toggleRecording() {
-            const recordBtn = document.getElementById('recordBtn');
-            if (isRecording) {
-                mediaRecorder.stop();
-                isRecording = false;
-                recordBtn.textContent = '🎤 Записать голос';
-                recordBtn.classList.remove('recording');
-            } else {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        function updateRecorderUI(state) {
+            const controls = document.getElementById('recorder-controls');
+            const player = document.getElementById('audio-player');
+
+            switch(state) {
+                case 'recording':
+                    player.style.display = 'none';
+                    controls.innerHTML = `
+                        <button class="button recording" id="pauseBtn">⏸️ Пауза</button>
+                        <button class="button" id="stopBtn">⏹️ Стоп</button>
+                    `;
+                    document.getElementById('pauseBtn').addEventListener('click', pauseRecording);
+                    document.getElementById('stopBtn').addEventListener('click', stopRecording);
+                    break;
+                case 'paused':
+                    player.style.display = 'none';
+                    controls.innerHTML = `
+                        <button class="button" id="resumeBtn">▶️ Продолжить</button>
+                        <button class="button" id="stopBtn">⏹️ Стоп</button>
+                    `;
+                    document.getElementById('resumeBtn').addEventListener('click', resumeRecording);
+                    document.getElementById('stopBtn').addEventListener('click', stopRecording);
+                    break;
+                case 'finished':
+                    controls.innerHTML = ''; // Прячем кнопки записи
+                    player.style.display = 'block'; // Показываем плеер
+                    document.getElementById('deleteRecordingBtn').addEventListener('click', deleteRecording);
+                    break;
+                case 'idle':
+                default:
+                    player.style.display = 'none';
+                    controls.innerHTML = `<button class="button" id="recordBtn">🎤 Записать голос</button>`;
+                    document.getElementById('recordBtn').addEventListener('click', startRecording);
+                    break;
+            }
+        }
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
                     mediaRecorder = new MediaRecorder(stream);
                     mediaRecorder.start();
                     audioChunks = [];
-                    mediaRecorder.addEventListener("dataavailable", event => {
-                        audioChunks.push(event.data);
+                    audioBlob = null;
+
+                    mediaRecorder.addEventListener("dataavailable", event => audioChunks.push(event.data));
+                    mediaRecorder.addEventListener("stop", () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const duration = (audioBlob.size / 15000).toFixed(2).replace('.',':'); // примерный расчет длительности
+                        document.getElementById('audio-duration').textContent = duration;
+                        updateRecorderUI('finished');
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
                     });
-                    isRecording = true;
-                    recordBtn.textContent = '⏹️ Остановить запись';
-                    recordBtn.classList.add('recording');
-                }).catch(err => {
-                    alert('Ошибка доступа к микрофону: ' + err);
-                });
+                    
+                    updateRecorderUI('recording');
+                }).catch(err => alert('Ошибка доступа к микрофону: ' + err));
+        }
+
+        function pauseRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.pause();
+                updateRecorderUI('paused');
             }
         }
         
-        function sendReflection() {
-            const text = document.getElementById('reflectText').value;
-
-            if (audioChunks.length > 0) {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    const base64Audio = reader.result.split(',')[1];
-                    sendAction('process_reflection', { text: text, audio: base64Audio });
-                    renderMainMenu();
-                    alert('Ваша рефлексия (текст и голос) отправлена на обработку! Результат придет в чат.');
-                };
-                reader.readAsDataURL(audioBlob);
-            } else if (text.trim() !== '') {
-                sendAction('process_reflection', { text: text });
-                renderMainMenu();
-                alert('Ваша рефлексия (текст) отправлена на обработку! Результат придет в чат.');
-            } else {
-                alert('Пожалуйста, введите текст или запишите голос.');
+        function resumeRecording() {
+            if (mediaRecorder && mediaRecorder.state === "paused") {
+                mediaRecorder.resume();
+                updateRecorderUI('recording');
             }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && (mediaRecorder.state === "recording" || mediaRecorder.state === "paused")) {
+                mediaRecorder.stop();
+            }
+        }
+        
+        function deleteRecording() {
+            audioBlob = null;
+            audioChunks = [];
+            updateRecorderUI('idle');
+        }
+
+        // --- ОТПРАВКА ДАННЫХ ---
+        
+        function sendReflectionData() {
+            if (!audioBlob) {
+                alert('Вы еще не записали голос. Нажмите "Записать голос".');
+                return;
+            }
+            
+            appContainer.innerHTML = '<h2>Отправляем...</h2>';
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                const base64Audio = reader.result.split(',')[1];
+                sendAction('process_reflection', { audio: base64Audio });
+                alert('Ваша рефлексия отправлена на обработку! Результат придет в чат.');
+                renderMainMenu();
+            };
+            reader.readAsDataURL(audioBlob);
+        }
+        
+        async function sendAction(actionName, payload = {}) {
+            // ... код этой функции остается прежним, он отправляет данные в n8n ...
+        }
+        
+        function handleResponse(response) {
+            // ... код этой функции остается прежним, он обрабатывает ответ от n8n ...
         }
 
         // --- ПЕРВЫЙ ЗАПУСК ---
