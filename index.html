@@ -6,13 +6,230 @@
     <title>PAAM</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 15px; text-align: center; background-color: #f0f2f5; color: #1c1e21; margin: 0; }
-        .container { max-width: 400px; margin: 0 auto; }
-        .button { display: block; width: 100%; padding: 15px; margin-bottom: 12px; font-size: 16px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .button:active { transform: scale(0.98); box-shadow: none; }
-        .questions-block { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; line-height: 1.6; font-size: 15px; }
-        #recorder-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
-        .content-area { background: white; padding: 20px; border-radius: 12px; margin-top: 20px; text-align: left; min-height: 100px;}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .app-subtitle {
+            opacity: 0.9;
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            padding: 16px 24px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: #fff;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            box-shadow: 0 4px 15px rgba(238, 90, 36, 0.4);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(238, 90, 36, 0.6);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(238, 90, 36, 0.4);
+        }
+
+        .button.secondary {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            box-shadow: 0 4px 15px rgba(9, 132, 227, 0.4);
+        }
+
+        .button.secondary:hover {
+            box-shadow: 0 8px 25px rgba(9, 132, 227, 0.6);
+        }
+
+        .button.success {
+            background: linear-gradient(45deg, #00b894, #00a085);
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+        }
+
+        .button.record {
+            background: linear-gradient(45deg, #e17055, #d63031);
+            animation: pulse 2s infinite;
+        }
+
+        .button.recording {
+            background: linear-gradient(45deg, #d63031, #a29bfe);
+            animation: recording-pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 4px 15px rgba(225, 112, 85, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(225, 112, 85, 0.8); }
+            100% { box-shadow: 0 4px 15px rgba(225, 112, 85, 0.4); }
+        }
+
+        @keyframes recording-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .questions-block {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            font-size: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .content-area {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            margin-top: 20px;
+            min-height: 120px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            text-align: center;
+            margin-top: 15px;
+            opacity: 0.8;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+            40%, 43% { transform: translate3d(0,-15px,0); }
+            70% { transform: translate3d(0,-7px,0); }
+            90% { transform: translate3d(0,-2px,0); }
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .recording-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(214, 48, 49, 0.2);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            background: #d63031;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .button-icon {
+            margin-right: 8px;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
@@ -22,16 +239,39 @@
 
     <script>
         // --- Глобальные переменные ---
-        const N8N_WEBHOOK_URL = 'https://primary-production-7ec55.up.railway.app/webhook/e93f8f64-1041-403c-821b-98e0d2627c51'; // <--- НЕ ЗАБУДЬТЕ ВСТАВИТЬ ВАШ URL!
+        const N8N_WEBHOOK_URL = 'https://primary-production-7ec55.up.railway.app/webhook/e93f8f64-1041-403c-821b-98e0d2627c51';
         const appContainer = document.getElementById('app-container');
         let mediaRecorder;
         let audioChunks = [];
         let audioBlob = null;
+        let recordingTimer = null;
+        let recordingTime = 0;
+
+        // --- Утилиты для безопасности ---
+        function sanitizeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function(match) {
+                const escape = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#x27;'
+                };
+                return escape[match];
+            });
+        }
 
         // --- Главная функция отправки данных в n8n ---
         async function sendAction(actionName, payload = {}) {
             renderLoading();
             try {
+                const userData = window.Telegram?.WebApp?.initDataUnsafe?.user;
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -39,18 +279,20 @@
                         action: actionName,
                         data: {
                             ...payload,
-                            user_id: window.Telegram.WebApp.initDataUnsafe.user?.id
+                            user_id: userData?.id || 'demo_user'
                         }
                     })
                 });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
                 const responseData = await response.json();
                 handleResponse(responseData);
             } catch (error) {
                 console.error("Fetch Error:", error);
-                renderError();
+                renderError(error.message);
             }
         }
 
@@ -71,56 +313,120 @@
                         renderMainMenu();
                 }
             } else {
-                renderMainMenu(); // Если ответ непонятный, показываем главное меню
+                renderMainMenu();
             }
         }
 
-        // --- Функции отрисовки (рендеринга) экранов ---
+        // --- Функции отрисовки экранов ---
         function renderLoading() {
-            appContainer.innerHTML = '<h2>Загрузка...</h2>';
+            appContainer.innerHTML = `
+                <div class="card fade-in">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Загрузка...</div>
+                </div>
+            `;
         }
 
-        function renderError() {
-            appContainer.innerHTML = '<h2>Произошла ошибка сети.</h2><button class="button" onclick="renderMainMenu()">Главное меню</button>';
-            document.querySelector('.button').addEventListener('click', renderMainMenu);
+        function renderError(message = 'Произошла ошибка сети') {
+            appContainer.innerHTML = `
+                <div class="card fade-in">
+                    <div class="error-message">
+                        <strong>❌ Ошибка</strong><br>
+                        ${escapeHTML(message)}
+                    </div>
+                    <button class="button secondary" onclick="renderMainMenu()">
+                        <span class="button-icon">🏠</span>Главное меню
+                    </button>
+                </div>
+            `;
         }
 
         function renderMainMenu() {
             appContainer.innerHTML = `
-                <h1>Меню PAAM</h1>
-                <button class="button" id="startBtn">▶️ Старт</button>
-                <button class="button" id="reflectBtn">📝 Reflect</button>
-                <button class="button" id="chatBtn">💬 Чат</button>
-                <div class="content-area" id="content-area"><p>Выберите действие.</p></div>
+                <div class="app-header fade-in">
+                    <h1 class="app-title">PAAM</h1>
+                    <p class="app-subtitle">Персональный ассистент</p>
+                </div>
+                <div class="card fade-in">
+                    <button class="button" id="startBtn">
+                        <span class="button-icon">▶️</span>Старт
+                    </button>
+                    <button class="button secondary" id="reflectBtn">
+                        <span class="button-icon">📝</span>Reflect
+                    </button>
+                    <button class="button secondary" id="chatBtn">
+                        <span class="button-icon">💬</span>Чат
+                    </button>
+                </div>
+                <div class="content-area fade-in">
+                    <p>Выберите нужное действие для начала работы.</p>
+                </div>
             `;
+            
+            // Добавляем обработчики событий
             document.getElementById('startBtn').addEventListener('click', () => sendAction('start'));
             document.getElementById('reflectBtn').addEventListener('click', () => sendAction('reflect'));
             document.getElementById('chatBtn').addEventListener('click', () => sendAction('chat'));
         }
         
         function renderReflectScreen(title, questions) {
+            const safeTitle = escapeHTML(title);
+            const safeQuestions = escapeHTML(questions).replace(/\\n/g, '<br>');
+            
             appContainer.innerHTML = `
-                <h2>${title}</h2>
-                <div class="questions-block">${questions.replace(/\\n/g, '<br>')}</div>
-                <div id="recorder-container"></div>
-                <button class="button" id="sendBtn">✅ Отправить рефлексию</button>
-                <button class="button" id="backBtn">⬅️ Назад</button>
+                <div class="app-header fade-in">
+                    <h2>${safeTitle}</h2>
+                </div>
+                <div class="card fade-in">
+                    <div class="questions-block">${safeQuestions}</div>
+                    <div id="recorder-container"></div>
+                    <button class="button success" id="sendBtn">
+                        <span class="button-icon">✅</span>Отправить рефлексию
+                    </button>
+                    <button class="button secondary" id="backBtn">
+                        <span class="button-icon">⬅️</span>Назад
+                    </button>
+                </div>
             `;
-            updateRecorderUI('idle'); // Начальное состояние диктофона
+            
+            updateRecorderUI('idle');
             document.getElementById('sendBtn').addEventListener('click', sendReflectionData);
             document.getElementById('backBtn').addEventListener('click', renderMainMenu);
         }
         
         function renderSuccessScreen(message) {
+            const safeMessage = escapeHTML(message);
             appContainer.innerHTML = `
-                <div class="content-area">
-                    <h2>✅ Успех!</h2>
-                    <p>${message}</p>
+                <div class="card fade-in">
+                    <div class="success-icon">✅</div>
+                    <h2>Успех!</h2>
+                    <p>${safeMessage}</p>
+                    <br>
+                    <button class="button success" id="okBtn">
+                        <span class="button-icon">🎉</span>Отлично!
+                    </button>
                 </div>
-                <br>
-                <button class="button" id="okBtn">Отлично!</button>
             `;
             document.getElementById('okBtn').addEventListener('click', renderMainMenu);
+        }
+
+        function renderInfoScreen(title, content) {
+            const safeTitle = escapeHTML(title);
+            const safeContent = escapeHTML(content);
+            appContainer.innerHTML = `
+                <div class="app-header fade-in">
+                    <h2>${safeTitle}</h2>
+                </div>
+                <div class="card fade-in">
+                    <div class="content-area">
+                        <p>${safeContent}</p>
+                    </div>
+                    <button class="button secondary" id="backBtn">
+                        <span class="button-icon">⬅️</span>Назад
+                    </button>
+                </div>
+            `;
+            document.getElementById('backBtn').addEventListener('click', renderMainMenu);
         }
 
         // --- Логика диктофона ---
@@ -130,64 +436,143 @@
 
             let content = '';
             if (state === 'idle') {
-                content = `<button class="button" id="recordBtn">🎤 Записать голос</button>`;
+                content = `<button class="button record" id="recordBtn">
+                    <span class="button-icon">🎤</span>Записать голос
+                </button>`;
             } else if (state === 'recording') {
-                content = `<button class="button" id="stopBtn">⏹️ Стоп</button>`;
+                content = `
+                    <div class="recording-indicator">
+                        <div class="recording-dot"></div>
+                        <span>Идет запись... <span id="timer">00:00</span></span>
+                    </div>
+                    <button class="button recording" id="stopBtn">
+                        <span class="button-icon">⏹️</span>Остановить запись
+                    </button>
+                `;
             } else if (state === 'finished') {
-                content = `<p>✔️ Запись готова</p><button class="button" id="deleteBtn">🗑️ Удалить</button>`;
+                content = `
+                    <div style="text-align: center; padding: 15px; background: rgba(0, 184, 148, 0.2); border-radius: 12px; margin-bottom: 15px;">
+                        <span style="font-size: 1.2em;">✔️</span> Запись готова (${formatTime(recordingTime)})
+                    </div>
+                    <button class="button" id="deleteBtn" style="background: linear-gradient(45deg, #e17055, #d63031);">
+                        <span class="button-icon">🗑️</span>Удалить и записать заново
+                    </button>
+                `;
             }
             recorderContainer.innerHTML = content;
 
             // Навешиваем обработчики на новые кнопки
-            if (state === 'idle') document.getElementById('recordBtn').addEventListener('click', startRecording);
-            if (state === 'recording') document.getElementById('stopBtn').addEventListener('click', stopRecording);
-            if (state === 'finished') document.getElementById('deleteBtn').addEventListener('click', deleteRecording);
+            if (state === 'idle') {
+                document.getElementById('recordBtn').addEventListener('click', startRecording);
+            }
+            if (state === 'recording') {
+                document.getElementById('stopBtn').addEventListener('click', stopRecording);
+                startTimer();
+            }
+            if (state === 'finished') {
+                document.getElementById('deleteBtn').addEventListener('click', deleteRecording);
+            }
         }
         
         function startRecording() {
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-                audioChunks = [];
-                audioBlob = null;
-                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                mediaRecorder.onstop = () => {
-                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                    updateRecorderUI('finished');
-                };
-                updateRecorderUI('recording');
-            }).catch(err => alert('Ошибка доступа к микрофону: ' + err.message));
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+                    mediaRecorder.start();
+                    audioChunks = [];
+                    audioBlob = null;
+                    recordingTime = 0;
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                        clearInterval(recordingTimer);
+                        updateRecorderUI('finished');
+                    };
+                    
+                    updateRecorderUI('recording');
+                })
+                .catch(err => {
+                    console.error('Microphone error:', err);
+                    alert('Ошибка доступа к микрофону: ' + err.message);
+                });
         }
 
-        function stopRecording() { if (mediaRecorder) mediaRecorder.stop(); }
-        function deleteRecording() { audioBlob = null; audioChunks = []; updateRecorderUI('idle'); }
+        function stopRecording() { 
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop(); 
+            }
+        }
+        
+        function deleteRecording() { 
+            audioBlob = null; 
+            audioChunks = []; 
+            recordingTime = 0;
+            updateRecorderUI('idle'); 
+        }
+
+        function startTimer() {
+            recordingTimer = setInterval(() => {
+                recordingTime++;
+                const timerElement = document.getElementById('timer');
+                if (timerElement) {
+                    timerElement.textContent = formatTime(recordingTime);
+                }
+            }, 1000);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
 
         // --- Отправка данных рефлексии ---
-        function sendReflectionData() {
+        async function sendReflectionData() {
             if (!audioBlob) {
-                alert('Вы еще не записали голос.');
+                alert('Пожалуйста, сначала запишите голосовое сообщение.');
                 return;
             }
+            
             renderLoading();
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64Audio = reader.result.split(',')[1];
-                sendAction('process_reflection', { audio: base64Audio });
-            };
-            reader.readAsDataURL(audioBlob);
+            
+            try {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64Audio = reader.result.split(',')[1];
+                    sendAction('process_reflection', { audio: base64Audio });
+                };
+                reader.onerror = () => {
+                    renderError('Ошибка при обработке аудиофайла');
+                };
+                reader.readAsDataURL(audioBlob);
+            } catch (error) {
+                renderError('Ошибка при подготовке аудиоданных');
+            }
         }
 
         // --- Инициализация приложения ---
         document.addEventListener('DOMContentLoaded', () => {
             try {
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-                renderMainMenu();
+                if (window.Telegram?.WebApp) {
+                    window.Telegram.WebApp.ready();
+                    window.Telegram.WebApp.expand();
+                    // Устанавливаем цвет темы для Telegram
+                    window.Telegram.WebApp.setHeaderColor('#667eea');
+                }
             } catch (e) {
-                console.error("Telegram WebApp script not found, running in browser mode.");
-                renderMainMenu();
+                console.log("Telegram WebApp script not found, running in browser mode.");
             }
+            
+            renderMainMenu();
         });
     </script>
 </body>
